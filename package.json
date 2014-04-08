@@ -1,0 +1,17 @@
+{
+  "name": "KtulhuDeploy",
+  "description": "Simple deployment server for handling Git WebHooks",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "node kdeploy.js"
+  },
+  "dependencies": {
+    "express": "3.5.1",
+	"underscore": "1.6.x"
+  },
+  "main": "kdeploy.js",
+  "repository": "",
+  "author": "Arseniy Maximov <localhost@kern0.ru> (http://kern0.ru)",
+  "license": "MIT"
+}
