@@ -70,7 +70,8 @@ app.post('*', function(req, res) {
 		} else {
 			payload = req.body;
 		}
-		var repoName = payload.repository.name.toLowerCase();
+		var repoName = payload.repository.name.toLowerCase(),
+			origRepoName = payload.repository.name;
 		
 		if (_.contains(cfg.applications.enabled, repoName) && 'refs/heads/' + cfg.applications[repoName].repo_branch === payload.ref) {
 			execFile(cfg.applications[repoName].execute, {
@@ -99,7 +100,7 @@ app.post('*', function(req, res) {
 					status: 200
 				});
 			});
-		} else if (!(_.contains(cfg.applications.enabled, repoName))) {
+		} else if (!(_.contains(cfg.applications.enabled, origRepoName))) {
 			return res.json(200, {
 				message: 'Wrong repository',
 				status: 400
