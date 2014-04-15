@@ -73,11 +73,13 @@ app.post('*', function(req, res) {
 		var repoName = payload.repository.name.toLowerCase();
 		
 		if (_.contains(cfg.applications.enabled, repoName) && 'refs/heads/' + cfg.applications[repoName].repo_branch === payload.ref) {
-			execFile(cfg.applications[repoName].execute, function(err, stdout, stderr) {
+			execFile(cfg.applications[repoName].execute, {
+				cwd: cfg.applications[repoName].directory
+			}, function(err, stdout, stderr) {
 				if (err) {
 					if (err.code === 'EACCES') {
 						return res.json(500, {
-							message: 'We don\'t have rights for executing: EACCESS',
+							message: 'We don\'t have rights for executing: EACCES',
 							status: 500
 						});
 					}
