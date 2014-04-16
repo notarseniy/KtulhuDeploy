@@ -76,6 +76,8 @@ app.post('*', function (req, res) {
 					ip = (ipHeader !== '127.0.0.1') ? ipHeader.split(',')[0] : ipHeader,
 					responseJson = JSON.parse(body);
 
+				//console.log(ip, ipHeader, req.headers);
+
 				responseJson.hooks.push('127.0.0.0/8');
 
 				if (range_check.in_range(ip, responseJson.hooks)) {
@@ -89,9 +91,9 @@ app.post('*', function (req, res) {
 					var repoName = payload.repository.name.toLowerCase(),
 						origRepoName = payload.repository.name;
 
-					if (_.contains(cfg.applications.enabled, repoName) && 'refs/heads/' + cfg.applications[repoName].repo_branch === payload.ref) {
-						execFile(cfg.applications[repoName].execute, {
-							cwd: cfg.applications[repoName].directory
+					if (_.contains(cfg.applications.enabled, origRepoName) && 'refs/heads/' + cfg.applications[origRepoName].repo_branch === payload.ref) {
+						execFile(cfg.applications[origRepoName].execute, {
+							cwd: cfg.applications[origRepoName].directory
 						}, function (err, stdout, stderr) {
 							if (err) {
 								if (err.code === 'EACCES') {
