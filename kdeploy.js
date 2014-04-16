@@ -73,13 +73,12 @@ app.post('*', function (req, res) {
 			}
 		}, function (err, response, body) {
 			if (!err && response.statusCode == 200) {
-				var ipHeader = req.headers['X-Real-IP'] || req.ip || '127.0.0.1',
+				var ipHeader = req.headers['x-real-ip'] || req.ip || '127.0.0.1',
 					ip = (ipHeader !== '127.0.0.1') ? ipHeader.split(',')[0] : ipHeader,
 					responseJson = JSON.parse(body);
 
 				responseJson.hooks.push('127.0.0.0/8');
 
-				console.log(range_check.in_range(responseJson.hooks, ip), responseJson, ip);
 				if (range_check.in_range(ip, responseJson.hooks)) {
 					var payload;
 					if (req.body.payload) {
