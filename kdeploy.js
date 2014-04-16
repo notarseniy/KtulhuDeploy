@@ -28,7 +28,9 @@
 var express = require('express'),
 	http = require('http'),
 	path = require('path'),
-	_ = require('underscore');
+	_ = require('underscore'),
+	range_check = require('range_check'),
+	request = require('request');
 
 var execFile = require('child_process').execFile;
 
@@ -51,71 +53,94 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // development only
 if ('development' == app.get('env')) {
-  app.use(express.errorHandler());
+	app.use(express.errorHandler());
 }
 
-app.get('*', function(req, res) {
+app.get('*', function (req, res) {
 	return res.json(404, {
 		message: 'Not Found',
 		status: 404
 	});
 });
 
-app.post('*', function(req, res) {
+app.post('*', function (req, res) {
 	if (req.body.payload || req.body.ref) {
-
-		var payload;
-		if (req.body.payload) {
-			payload = JSON.parse(req.body.payload);
-		} else {
-			payload = req.body;
-		}
-		var repoName = payload.repository.name.toLowerCase(),
-			origRepoName = payload.repository.name;
 		
-		if (_.contains(cfg.applications.enabled, repoName) && 'refs/heads/' + cfg.applications[repoName].repo_branch === payload.ref) {
-			execFile(cfg.applications[repoName].execute, {
-				cwd: cfg.applications[repoName].directory
-			}, function(err, stdout, stderr) {
-				if (err) {
-					if (err.code === 'EACCES') {
-						return res.json(500, {
-							message: 'We don\'t have rights for executing: EACCES',
-							status: 500
+		request({
+			url: 'https://api.github.com/meta',
+			headers: {
+				'User-Agent': 'KtulhuDeploy'
+			}
+		}, function (err, response, body) {
+			if (!err && response.statusCode == 200) {
+				var ipHeader = req.headers['X-Real-IP'] || req.ip || '127.0.0.1',
+					ip = (ipHeader !== '127.0.0.1') ? ipHeader.split(',')[0] : ipHeader,
+					responseJson = JSON.parse(body);
+
+				responseJson.hooks.push('127.0.0.0/8');
+
+				console.log(range_check.in_range(responseJson.hooks, ip), responseJson, ip);
+				if (range_check.in_range(ip, responseJson.hooks)) {
+					var payload;
+					if (req.body.payload) {
+						payload = JSON.parse(req.body.payload);
+					} else {
+						payload = req.body;
+					}
+					var repoName = payload.repository.name.toLowerCase(),
+						origRepoName = payload.repository.name;
+
+					if (_.contains(cfg.applications.enabled, repoName) && 'refs/heads/' + cfg.applications[repoName].repo_branch === payload.ref) {
+						execFile(cfg.applications[repoName].execute, {
+							cwd: cfg.applications[repoName].directory
+						}, function (err, stdout, stderr) {
+							if (err) {
+								if (err.code === 'EACCES') {
+									return res.json(500, {
+										message: 'We don\'t have rights for executing: EACCES',
+										status: 500
+									});
+								}
+								if (err.code === 1) {
+									console.log('[ERROR][' + repoName + '] Script exited with error code: 1. Stderr:\n', stderr, '\n');
+									return res.json(500, {
+										message: 'Script exited with error code: 1',
+										status: 500
+									});
+								}
+								throw err;
+							}
+
+							console.log('[DEPLOY][' + repoName + 'Successfully deployed to server.');
+							res.json({
+								message: 'Successfully deployed ' + repoName + ' to server.',
+								status: 200
+							});
+						});
+					} else if (!(_.contains(cfg.applications.enabled, origRepoName))) {
+						return res.json(400, {
+							message: 'Wrong repository',
+							status: 400
+						});
+					} else if (!('refs/heads/' + cfg.applications[repoName].repo_branch === payload.ref)) {
+						return res.json(400, {
+							message: 'Wrong branch',
+							status: 400
+						});
+					} else {
+						return res.json(400, {
+							message: 'Wrong request',
+							status: 400
 						});
 					}
-					if (err.code === 1) {
-						console.log('[ERROR][' + repoName + '] Script exited with error code: 1. Stderr:\n', stderr, '\n');
-						return res.json(500, {
-							message: 'Script exited with error code: 1',
-							status: 500
-						});
-					}
-					throw err;
+				} else {
+					res.json(403, {
+						message: 'Access denied',
+						status: 400
+					});
 				}
-				
-				console.log('[DEPLOY][' + repoName + 'Successfully deployed to server.');
-				res.json({
-					message: 'Successfully deployed ' + repoName + ' to server.',
-					status: 200
-				});
-			});
-		} else if (!(_.contains(cfg.applications.enabled, origRepoName))) {
-			return res.json(200, {
-				message: 'Wrong repository',
-				status: 400
-			});
-		} else if (!('refs/heads/' + cfg.applications[repoName].repo_branch === payload.ref)) {
-			return res.json(200, {
-				message: 'Wrong branch',
-				status: 400
-			});
-		} else {
-			return res.json(200, {
-				message: 'Wrong request',
-				status: 400
-			});
-		}
+			}
+		});
 	} else {
 		return res.json(400, {
 			message: 'Wrong request',
@@ -124,6 +149,6 @@ app.post('*', function(req, res) {
 	}
 });
 
-http.createServer(app).listen(app.get('port'), function(){
-  console.log('[START] Started at ' + app.get('port') + ' port');
+http.createServer(app).listen(app.get('port'), function () {
+	console.log('[START] Started at ' + app.get('port') + ' port');
 });

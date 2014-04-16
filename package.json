@@ -8,7 +8,9 @@
   },
   "dependencies": {
     "express": "3.5.1",
-	"underscore": "1.6.x"
+	"underscore": "1.6.x",
+	"range_check": "0.0.4",
+	"request": "2.34.x"
   },
   "main": "kdeploy.js",
   "repository": "",
