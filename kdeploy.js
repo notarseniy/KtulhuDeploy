@@ -65,7 +65,6 @@ app.get('*', function (req, res) {
 
 app.post('*', function (req, res) {
 	if (req.body.payload || req.body.ref) {
-		
 		request({
 			url: 'https://api.github.com/meta',
 			headers: {
@@ -86,6 +85,7 @@ app.post('*', function (req, res) {
 					} else {
 						payload = req.body;
 					}
+
 					var repoName = payload.repository.name.toLowerCase(),
 						origRepoName = payload.repository.name;
 
@@ -121,7 +121,7 @@ app.post('*', function (req, res) {
 							message: 'Wrong repository',
 							status: 400
 						});
-					} else if (!('refs/heads/' + cfg.applications[repoName].repo_branch === payload.ref)) {
+					} else if (!('refs/heads/' + cfg.applications[origRepoName].repo_branch === payload.ref)) {
 						return res.json(400, {
 							message: 'Wrong branch',
 							status: 400
