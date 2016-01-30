@@ -80,7 +80,7 @@ app.post('*', function (req, res) {
 
 				responseJson.hooks.push('127.0.0.0/8');
 
-				if (range_check.in_range(ip, responseJson.hooks)) {
+				//if (range_check.in_range(ip, responseJson.hooks)) {
 					var payload;
 					if (req.body.payload) {
 						payload = JSON.parse(req.body.payload);
@@ -134,12 +134,12 @@ app.post('*', function (req, res) {
 							status: 400
 						});
 					}
-				} else {
+				/*} else {
 					res.json(403, {
 						message: 'Access denied',
 						status: 400
 					});
-				}
+				}*/
 			}
 		});
 	} else {
